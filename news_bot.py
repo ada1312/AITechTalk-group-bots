@@ -9,7 +9,7 @@ from nltk.probability import FreqDist
 import nltk
 import math
 import random
-from telebot.async_telebot import AsyncTeleBot
+import telebot
 import logging
 
 # Set up logging
@@ -23,15 +23,16 @@ nltk.download('stopwords', quiet=True)
 # Load environment variables
 load_dotenv()
 
-# Get API keys from environment variables
+# Get API keys and chat ID from environment variables
 NEWS_API_KEY = os.getenv('NEWS_API_KEY')
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+TELEGRAM_GROUP_CHAT_ID = os.getenv('TELEGRAM_GROUP_CHAT_ID')
 
 # Specify the news sources and keywords we want
 ALLOWED_SOURCES = ['Forbes', 'TechCrunch', 'Wired', 'MIT Technology Review', 'VentureBeat']
 KEYWORDS = ['AI', 'artificial intelligence', 'machine learning', 'deep learning', 'neural networks', 'NLP', 'computer vision']
 
-bot = AsyncTeleBot(TELEGRAM_BOT_TOKEN)
+bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 
 async def fetch_ai_news():
     seven_days_ago = (datetime.now() - timedelta(7)).strftime('%Y-%m-%d')
@@ -108,48 +109,21 @@ async def get_ai_news():
     else:
         return "Sorry, I couldn't fetch any news at the moment. Please try again later."
 
-@bot.message_handler(commands=['start', 'help'])
-async def send_welcome(message):
-    welcome_text = (
-        "Welcome to the AI News Bot! 🤖📰\n\n"
-        "I'm here to keep you updated with the latest AI news. Here are the commands you can use:\n\n"
-        "/news - Get the latest AI news\n"
-        "/sources - See the list of news sources\n"
-        "/keywords - View the AI-related keywords I'm tracking\n\n"
-        "Feel free to ask for news anytime!"
-    )
-    await bot.reply_to(message, welcome_text)
-
-@bot.message_handler(commands=['news'])
-async def send_news(message):
-    await bot.reply_to(message, "Fetching the latest AI news... Please wait.")
+async def send_news_update():
+    logger.info("Sending news update to the group")
     news_message = await get_ai_news()
     try:
-        await bot.send_message(message.chat.id, news_message, parse_mode='Markdown')
+        bot.send_message(TELEGRAM_GROUP_CHAT_ID, news_message, parse_mode='HTML')
+        logger.info("News update sent successfully")
     except Exception as e:
-        logger.error(f"Error sending message: {str(e)}")
-        await bot.reply_to(message, "Sorry, I encountered an error while sending the news. Please try again later.")
-
-@bot.message_handler(commands=['sources'])
-async def send_sources(message):
-    sources_text = "I'm currently fetching news from these sources:\n\n" + "\n".join(ALLOWED_SOURCES)
-    await bot.reply_to(message, sources_text)
-
-@bot.message_handler(commands=['keywords'])
-async def send_keywords(message):
-    keywords_text = "I'm tracking news related to these AI keywords:\n\n" + "\n".join(KEYWORDS)
-    await bot.reply_to(message, keywords_text)
+        logger.error(f"Error sending news update: {str(e)}")
 
 async def main():
-    if not NEWS_API_KEY or not TELEGRAM_BOT_TOKEN:
-        logger.error("Error: NEWS_API_KEY or TELEGRAM_BOT_TOKEN is not set in the environment variables.")
+    if not NEWS_API_KEY or not TELEGRAM_BOT_TOKEN or not TELEGRAM_GROUP_CHAT_ID:
+        logger.error("Error: NEWS_API_KEY, TELEGRAM_BOT_TOKEN, or TELEGRAM_GROUP_CHAT_ID is not set in the environment variables.")
         return
 
-    try:
-        logger.info("Starting bot polling...")
-        await bot.polling(non_stop=True, timeout=60)
-    except Exception as e:
-        logger.error(f"Error in bot polling: {str(e)}")
+    await send_news_update()
 
 if __name__ == "__main__":
     asyncio.run(main())

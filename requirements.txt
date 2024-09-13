@@ -1,0 +1,4 @@
+aiohttp
+python-dotenv
+nltk
+pyTelegramBotAPI
