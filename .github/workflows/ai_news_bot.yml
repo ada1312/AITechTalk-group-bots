@@ -24,3 +24,13 @@ jobs:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_GROUP_CHAT_ID: ${{ secrets.TELEGRAM_GROUP_CHAT_ID }}
       run: python news_bot.py
+    - name: Check for errors
+      if: failure()
+      run: |
+        echo "The news bot encountered an error. Please check the logs for more information."
+        echo "Common issues:"
+        echo "1. Bot is not a member of the group"
+        echo "2. Bot was kicked from the group"
+        echo "3. Incorrect group chat ID"
+        echo "4. Insufficient bot permissions"
+        echo "Please resolve these issues and re-run the workflow."

@@ -109,14 +109,35 @@ async def get_ai_news():
     else:
         return "Sorry, I couldn't fetch any news at the moment. Please try again later."
 
+def check_bot_membership():
+    try:
+        chat_member = bot.get_chat_member(TELEGRAM_GROUP_CHAT_ID, bot.get_me().id)
+        return chat_member.status in ['member', 'administrator', 'creator']
+    except telebot.apihelper.ApiException as e:
+        logger.error(f"Error checking bot membership: {e}")
+        return False
+
 async def send_news_update():
+    logger.info("Checking bot membership in the group")
+    if not check_bot_membership():
+        logger.error("Bot is not a member of the group. Please add the bot to the group and grant necessary permissions.")
+        return
+
     logger.info("Sending news update to the group")
     news_message = await get_ai_news()
     try:
         bot.send_message(TELEGRAM_GROUP_CHAT_ID, news_message, parse_mode='HTML')
         logger.info("News update sent successfully")
+    except telebot.apihelper.ApiException as e:
+        logger.error(f"Telegram API error: {e}")
+        if "bot was kicked" in str(e).lower():
+            logger.error("The bot was kicked from the group. Please add it back and grant necessary permissions.")
+        elif "chat not found" in str(e).lower():
+            logger.error("The specified group chat was not found. Please check the TELEGRAM_GROUP_CHAT_ID.")
+        elif "not enough rights" in str(e).lower():
+            logger.error("The bot doesn't have enough rights to send messages. Please check its permissions in the group.")
     except Exception as e:
-        logger.error(f"Error sending news update: {str(e)}")
+        logger.error(f"Unexpected error sending news update: {str(e)}")
 
 async def main():
     if not NEWS_API_KEY or not TELEGRAM_BOT_TOKEN or not TELEGRAM_GROUP_CHAT_ID:
