@@ -19,7 +19,7 @@ nltk_data_dir = '/tmp/nltk_data'
 if not os.path.exists(nltk_data_dir):
     os.makedirs(nltk_data_dir)
 
-# Set the data path for NLTK
+# Set the NLTK data path
 nltk.data.path.append(nltk_data_dir)
 
 # Download necessary NLTK data
@@ -154,17 +154,13 @@ async def send_telegram_message(message):
                     response_text = await response.text()
                     logging.error(f"Response: {response_text}")
         except Exception as e:
-            logging.error(f"An error occurred: {e}")
+            logging.error(f"Error while sending message: {e}")
 
 async def main():
-    logging.info(f"Starting main function with TELEGRAM_CHANNEL: {TELEGRAM_CHANNEL}")
+    logging.info("Starting main function with TELEGRAM_CHANNEL: ***")
     
-    if not NEWS_API_KEY or not TELEGRAM_BOT_TOKEN:
-        logging.error("Error: NEWS_API_KEY or TELEGRAM_BOT_TOKEN is not set in the environment variables.")
-        return
-
     news_message = await get_ai_news()
     await send_telegram_message(news_message)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     asyncio.run(main())
