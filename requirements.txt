@@ -2,3 +2,4 @@ python-dotenv
 nltk
 aiohttp
 python-telegram-bot
+spacy
