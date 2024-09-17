@@ -3,10 +3,7 @@ import asyncio
 import aiohttp
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from nltk.tokenize import sent_tokenize
-from nltk.corpus import stopwords
-from nltk.probability import FreqDist
-import nltk
+import spacy
 import math
 import random
 import logging
@@ -14,17 +11,8 @@ import logging
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Specify a path for NLTK data
-nltk_data_dir = '/tmp/nltk_data'
-if not os.path.exists(nltk_data_dir):
-    os.makedirs(nltk_data_dir)
-
-# Set the NLTK data path
-nltk.data.path.append(nltk_data_dir)
-
-# Download necessary NLTK data
-nltk.download('punkt', download_dir=nltk_data_dir)
-nltk.download('stopwords', download_dir=nltk_data_dir)
+# Load the small English NLP model from spaCy
+nlp = spacy.load('en_core_web_sm')
 
 # Load environment variables
 load_dotenv()
@@ -63,10 +51,15 @@ async def fetch_ai_news():
                 return None
 
 def summarize_text(text, num_sentences=2):
-    sentences = sent_tokenize(text)
-    words = [word.lower() for sentence in sentences for word in sentence.split() if word.lower() not in stopwords.words('english')]
-    freq_dist = FreqDist(words)
-    sentence_scores = {sentence: sum(freq_dist[word.lower()] for word in sentence.split() if word.lower() not in stopwords.words('english')) for sentence in sentences}
+    # Use spaCy to tokenize the text into sentences
+    doc = nlp(text)
+    sentences = [sent.text for sent in doc.sents]
+    
+    # Frequency-based sentence scoring
+    words = [token.text.lower() for token in doc if not token.is_stop and not token.is_punct]
+    word_freq = {word: words.count(word) for word in set(words)}
+    
+    sentence_scores = {sentence: sum(word_freq.get(token.text.lower(), 0) for token in nlp(sentence)) for sentence in sentences}
     summary_sentences = sorted(sentence_scores, key=sentence_scores.get, reverse=True)[:num_sentences]
     summary = ' '.join(summary_sentences)
     return summary
@@ -150,7 +143,7 @@ async def send_telegram_message(message):
                     response_json = await response.json()
                     logging.info(f"Response: {response_json}")
                 else:
-                    logging.error(f"Failed to send message. Status: {response.status}")
+                    logging.error(f"Failed to send message: {response.status}")
                     response_text = await response.text()
                     logging.error(f"Response: {response_text}")
         except Exception as e:
