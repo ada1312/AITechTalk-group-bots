@@ -14,9 +14,17 @@ import logging
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Specify a path for NLTK data
+nltk_data_dir = '/tmp/nltk_data'
+if not os.path.exists(nltk_data_dir):
+    os.makedirs(nltk_data_dir)
+
+# Set the data path for NLTK
+nltk.data.path.append(nltk_data_dir)
+
 # Download necessary NLTK data
-nltk.download('punkt', quiet=True)
-nltk.download('stopwords', quiet=True)
+nltk.download('punkt', download_dir=nltk_data_dir)
+nltk.download('stopwords', download_dir=nltk_data_dir)
 
 # Load environment variables
 load_dotenv()
