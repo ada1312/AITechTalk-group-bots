@@ -20,16 +20,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-
-    - name: Clean NLTK cache
-      run: |
-        rm -rf /opt/hostedtoolcache/Python/3.11.9/x64/nltk_data
-        rm -rf /tmp/nltk_data
-
-    - name: Download NLTK resources
-      run: |
-        mkdir -p /tmp/nltk_data
-        python -m nltk.downloader -d /tmp/nltk_data punkt stopwords
+        python -m spacy download en_core_web_sm  # Install spaCy language model
 
     - name: Run news bot
       env:
