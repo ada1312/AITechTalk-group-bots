@@ -20,7 +20,8 @@ jobs:
         pip install -r requirements.txt
     - name: Download NLTK resources
       run: |
-        python -m nltk.downloader punkt stopwords
+        mkdir -p /tmp/nltk_data
+        python -m nltk.downloader -d /tmp/nltk_data punkt stopwords
     - name: Run news bot
       env:
         NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
